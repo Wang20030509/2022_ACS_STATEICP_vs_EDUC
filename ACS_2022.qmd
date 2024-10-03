@@ -1,0 +1,100 @@
+---
+title: "IPUMS ACS 2022: Ratio Estimators and State Respondent Counts"
+author: "Doran Wang"
+format: 
+  pdf: 
+    toc: true
+    toc-depth: 2
+---
+
+```{r}
+### setup ###
+```
+
+
+# Introduction
+
+In this report, we will estimate the total number of respondents in each U.S. state using the ratio estimators approach of Laplace. Our focus is on respondents with doctoral degrees as their highest educational attainment, based on the 2022 American Community Survey (ACS) data obtained from IPUMS.
+
+# Data Acquisition
+
+To obtain the data, follow these steps:
+
+1.  Visit the [IPUMS USA](https://usa.ipums.org/usa/) website.
+
+2.  Create a free account and log in.
+
+3.  Select the "2022 ACS" dataset.
+
+4.  Choose the following variables:
+
+    -   **STATEICP**: State code
+    -   **EDUCD**: Detailed educational attainment
+
+5.  Submit your data extract request and download the resulting `.csv` file. If the file is compressed (with a `.gz` extension), use the following command in your terminal to unzip it:
+
+    \`\`\`bash gunzip usa_00004.csv.gz
+
+6.  Load the data into R
+
+------------------------------------------------------------------------
+
+## Overview of the Ratio Estimator Approach
+
+The ratio estimator approach is a simple method used to estimate population totals based on a known ratio from a subset of data. In this case, we know the number of respondents with doctoral degrees in each state and the total number of respondents in California (391,171). We can compute the ratio of doctoral degree holders to total respondents in California and apply that ratio to estimate total respondent counts in other states.
+
+Mathematically, the ratio estimator is given by:
+
+$N=\frac{D_{D\_{CA}}×{N\_{CA}N^j$
+
+
+Where:
+
+-   \$\\hat{N}\_j\$ is the estimated total number of respondents in state \$j\$.
+
+-   \$D_j\$ is the number of respondents with doctoral degrees in state \$j\$.
+
+-   \$D\_{CA}\$ is the number of respondents with doctoral degrees in California.
+
+-   \$N\_{CA}\$ is the total number of respondents in California (391,171).
+
+# Data Analysis
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(tinytex)
+
+# Load the IPUMS dataset (adjust the path to your file)
+data <- read_csv("usa_00001.csv")
+
+# Filter for respondents with doctoral degrees
+doctoral_data <- data %>%
+  filter(EDUCD == 116)  # 116 is the code for doctoral degree
+
+# Count the number of doctoral degree holders by state
+doctoral_by_state <- doctoral_data %>%
+  group_by(STATEICP) %>%
+  summarise(doctoral_count = n())
+
+# Example: Number of doctoral degree holders in California
+california_doctoral <- doctoral_by_state %>%
+  filter(STATEICP == 6)  # 06 is the code for California
+
+california_doctoral_count <- california_doctoral$doctoral_count
+
+# Compute the ratio and apply it to estimate total respondents by state
+ratio <- doctoral_by_state %>%
+  mutate(
+    estimated_total = (doctoral_count / california_doctoral_count) * 391171
+  )
+
+# Display the results
+print(ratio)
+
+```
+
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like thi
